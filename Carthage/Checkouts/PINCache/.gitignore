@@ -22,4 +22,6 @@ xcuserdata
 /.buckconfig.local
 /.buckd
 
+DerivedData/
 Carthage/Build
+Carthage/Checkout
