@@ -1,7 +1,7 @@
 #!/bin/bash
 
-ARTIFACT="ReSwift.framework.zip"
-UPSTREAM="git@github.com:ReSwift/ReSwift.git"
+ARTIFACT="PINRemoteImage.framework.zip"
+UPSTREAM="git@github.com:pinterest/PINRemoteImage.git"
 
 ### Cleanup, build, archive
 rm -rf ./Carthage/ ./DerivedData

@@ -38,5 +38,5 @@ workflows:
 
 app:
   envs:
-  - ARTIFACT: "ReSwift.framework.zip"
-  - UPSTREAM: "git@github.com:ReSwift/ReSwift.git"
+  - ARTIFACT: "PINRemoteImage.framework.zip"
+  - UPSTREAM: "git@github.com:pinterest/PINRemoteImage.git"
