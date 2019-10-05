@@ -101,7 +101,7 @@ class PINAnimatedImageTests: XCTestCase, PINRemoteImageManagerAlternateRepresent
     }
     
     func alternateRepresentation(with data: Data!, options: PINRemoteImageManagerDownloadOptions = []) -> Any! {
-        guard let nsdata = data as? NSData else {
+        guard let nsdata = data as NSData? else {
             return nil
         }
         if nsdata.pin_isAnimatedWebP() || nsdata.pin_isAnimatedGIF() {
@@ -131,5 +131,62 @@ class PINAnimatedImageTests: XCTestCase, PINRemoteImageManagerAlternateRepresent
             nonAnimatedExpectation.fulfill()
         }
         self.waitForExpectations(timeout: self.timeoutInterval(), handler: nil)
+    }
+  
+  func testAnimatedImageViewInitializer() {
+      let animatedExpectation =  self.expectation(description: "Animated image should be downloaded")
+      let imageManager = PINRemoteImageManager.init(sessionConfiguration: nil, alternativeRepresentationProvider: self)
+      imageManager.downloadImage(with: self.slowAnimatedGIFURL()!) { (result : PINRemoteImageManagerResult) in
+          XCTAssert(result.image == nil)
+          guard let animatedData = result.alternativeRepresentation as? NSData else {
+              XCTAssert(false, "alternativeRepresentation should be able to be coerced into data")
+              return
+          }
+
+          XCTAssert(animatedData.pin_isGIF() && animatedData.pin_isAnimatedGIF())
+
+          DispatchQueue.main.async {
+              let pinCachedAnimatedImage = PINCachedAnimatedImage(animatedImageData: animatedData as Data)
+
+              let gifImageView = PINAnimatedImageView(animatedImage: pinCachedAnimatedImage!)
+              XCTAssert(gifImageView.animatedImage?.coverImageReadyCallback != nil)
+
+              animatedExpectation.fulfill()
+          }
+      }
+
+      self.waitForExpectations(timeout: self.timeoutInterval(), handler: nil)
+  }
+    
+  func testGIFBytes() {
+        let animatedExpectation =  self.expectation(description: "Animated image should be downloaded")
+        let imageManager = PINRemoteImageManager.init(sessionConfiguration: nil, alternativeRepresentationProvider: self)
+        imageManager.downloadImage(with: self.slowAnimatedGIFURL()!) { (result : PINRemoteImageManagerResult) in
+            XCTAssert(result.image == nil)
+            guard let animatedData = result.alternativeRepresentation as? NSData else {
+                XCTAssert(false, "alternativeRepresentation should be able to be coerced into data")
+                return
+            }
+            
+            XCTAssert(animatedData.pin_isGIF() && animatedData.pin_isAnimatedGIF())
+            
+            let pinCachedAnimatedImage = PINGIFAnimatedImage(animatedImageData: animatedData as Data)!
+            let bytesSize = UInt32((pinCachedAnimatedImage.image(at: 0, cacheProvider: nil)!.takeUnretainedValue() as CGImage).bytesPerRow) * pinCachedAnimatedImage.height
+
+            XCTAssert(pinCachedAnimatedImage.bytesPerFrame == bytesSize)
+            
+            animatedExpectation.fulfill()
+        }
+        
+        self.waitForExpectations(timeout: self.timeoutInterval(), handler: nil)
+    }
+  
+    func testInvalidAnimatedData() {
+        let data = "AA".data(using: .ascii)
+        let gifAnimatedImage = PINGIFAnimatedImage(animatedImageData: data)
+        XCTAssert(gifAnimatedImage == nil)
+        
+        let webpAnimatedImage = PINWebPAnimatedImage(animatedImageData: data)
+        XCTAssert(webpAnimatedImage == nil)
     }
 }

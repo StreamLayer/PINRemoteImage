@@ -1,8 +1,15 @@
 ## master
 * Add your own contributions to the next release on the line below this with your name.
-- [new] Add PINRemoteImageManagerConfiguration configuration object [#492](https://github.com/pinterest/PINRemoteImage/pull/492) [rqueue](https://github.com/rqueue)
+- [new] Add PINRemoteImageManagerConfiguration configuration object. [#492](https://github.com/pinterest/PINRemoteImage/pull/492) [rqueue](https://github.com/rqueue)
+- [fixed] Fixes blending in animated WebP images. [#507](https://github.com/pinterest/PINRemoteImage/pull/507) [garrettmoon](https://github.com/garrettmoon)
+- [fixed] Fixes support in PINAnimatedImageView for WebP animated images. [#507](https://github.com/pinterest/PINRemoteImage/pull/507) [garrettmoon](https://github.com/garrettmoon)
+- [fixed] Fixes AnimatedImageView designated initializer not work. [#512](https://github.com/pinterest/PINRemoteImage/pull/512) [zhongwuzw](https://github.com/zhongwuzw)
+- [fixed] Set bpp(bits per pixel) to 32 bit for GIF. [#511](https://github.com/pinterest/PINRemoteImage/pull/511) [zhongwuzw](https://github.com/zhongwuzw)
+- [new] Add cancel method for PINRemoteImageManager. [#509](https://github.com/pinterest/PINRemoteImage/pull/509) [zhongwuzw](https://github.com/zhongwuzw)
+- [fixed] Fixes build error when using Xcode 10.2.1. [#524](https://github.com/pinterest/PINRemoteImage/pull/524) [ANNotunzdY](https://github.com/ANNotunzdY)
 
 ## 3.0.0 Beta 14
+- [fixed] Re-enable warnings check [#506](https://github.com/pinterest/PINRemoteImage/pull/506) [garrettmoon](https://github.com/garrettmoon)
 - [new] Allow use of NSURLCache via a custom NSURLSession [#477](https://github.com/pinterest/PINRemoteImage/pull/477) [wiseoldduck](https://github.com/wiseoldduck)
 - [new] Respect Cache-Control and Expires headers if the cache supports TTL. [#462](https://github.com/pinterest/PINRemoteImage/pull/462) [wiseoldduck](https://github.com/wiseoldduck)
 - [new] Updated to latest PINCache beta 7. [#461](https://github.com/pinterest/PINRemoteImage/pull/461) [wiseoldduck](https://github.com/wiseoldduck)

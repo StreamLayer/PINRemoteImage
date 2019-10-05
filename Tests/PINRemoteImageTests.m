@@ -24,6 +24,7 @@
 #import <objc/runtime.h>
 
 static BOOL requestRetried = NO;
+static NSInteger canceledCount = 0;
 
 static inline BOOL PINImageAlphaInfoIsOpaque(CGImageAlphaInfo info) {
 	switch (info) {
@@ -65,6 +66,12 @@ static inline BOOL PINImageAlphaInfoIsOpaque(CGImageAlphaInfo info) {
 @property (nonatomic, readonly) NSUInteger totalDownloads;
 
 - (NSString *)resumeCacheKeyForURL:(NSURL *)url;
+
+@end
+
+@interface PINRemoteImageManager (Swizzled)
+
+- (void)swizzled_cancelTaskWithUUID:(nonnull NSUUID *)UUID storeResumeData:(BOOL)storeResumeData;
 
 @end
 
@@ -176,6 +183,11 @@ static inline BOOL PINImageAlphaInfoIsOpaque(CGImageAlphaInfo info) {
     return [NSURL URLWithString:@"https://performancedemo.vir2al.ch/assets/img/progressive/thumb/spiez_sunset.jpg"];
 }
 
+- (NSURL *)progressiveURL2
+{
+    return [NSURL URLWithString:@"https://performancedemo.vir2al.ch/assets/img/baseline/thumb/balkon.jpg"];
+}
+
 - (NSArray <NSURL *> *)bigURLs
 {
     static dispatch_once_t onceToken;
@@ -261,6 +273,23 @@ static inline BOOL PINImageAlphaInfoIsOpaque(CGImageAlphaInfo info) {
     configuration.HTTPAdditionalHeaders = @{ @"Authorization" : @"Pinterest 123456" };
     self.imageManager = [[PINRemoteImageManager alloc] initWithSessionConfiguration:configuration];
     XCTAssert([self.imageManager.sessionManager.session.configuration.HTTPAdditionalHeaders isEqualToDictionary:@{ @"Authorization" : @"Pinterest 123456" }]);
+}
+
+- (void)testURLSessionManagerDeallocated
+{
+    XCTestExpectation *expectation = [self expectationWithDescription:@"URLSessionManager should be deallocated"];
+    __block __weak PINURLSessionManager *sessionManager = nil;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        PINRemoteImageManager *manager = [[PINRemoteImageManager alloc] initWithSessionConfiguration:nil];
+        sessionManager = manager.sessionManager;
+    });
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        XCTAssert(sessionManager == nil);
+        [expectation fulfill];
+    });
+    
+    [self waitForExpectationsWithTimeout:[self timeoutTimeInterval] handler:nil];
 }
 
 - (void)testCustomHeaderIsAddedToImageRequests
@@ -957,7 +986,7 @@ static inline BOOL PINImageAlphaInfoIsOpaque(CGImageAlphaInfo info) {
     // JPEGURL_Small includes the header "Cache-Control: max-age=31536000, immutable"
     // If that ever changes, this might start failing
     [self.imageManager downloadImageWithURL:[self JPEGURL_Small] completion:^(PINRemoteImageManagerResult *result) {
-        XCTAssert(result.resultType == PINRemoteImageResultTypeDownload, @"Expected PINRemoteImageResultTypeDownload(3), got %d", result.resultType);
+        XCTAssert(result.resultType == PINRemoteImageResultTypeDownload, @"Expected PINRemoteImageResultTypeDownload(3), got %lu", (unsigned long)result.resultType);
         dispatch_semaphore_signal(semaphore);
     }];
     XCTAssert(dispatch_semaphore_wait(semaphore, [self timeout]) == 0, @"Semaphore timed out.");
@@ -966,7 +995,7 @@ static inline BOOL PINImageAlphaInfoIsOpaque(CGImageAlphaInfo info) {
     id diskCachedObj = [cache objectFromDiskForKey:key];
     XCTAssert(diskCachedObj != nil, @"Image was not found in the disk cache");
     [self.imageManager downloadImageWithURL:[self JPEGURL_Small] completion:^(PINRemoteImageManagerResult *result) {
-        XCTAssert(result.resultType == PINRemoteImageResultTypeMemoryCache, @"Expected PINRemoteImageResultTypeCache(2), got %d", result.resultType);
+        XCTAssert(result.resultType == PINRemoteImageResultTypeMemoryCache, @"Expected PINRemoteImageResultTypeCache(2), got %lu", (unsigned long)result.resultType);
         dispatch_semaphore_signal(semaphore);
     }];
     XCTAssert(dispatch_semaphore_wait(semaphore, [self timeout]) == 0, @"Semaphore timed out.");
@@ -975,7 +1004,7 @@ static inline BOOL PINImageAlphaInfoIsOpaque(CGImageAlphaInfo info) {
     diskCachedObj = [cache objectFromDiskForKey:key];
     XCTAssert(diskCachedObj == nil, @"Image was not discarded from the disk cache");
     [self.imageManager downloadImageWithURL:[self JPEGURL_Small] completion:^(PINRemoteImageManagerResult *result) {
-        XCTAssert(result.resultType == PINRemoteImageResultTypeDownload, @"Expected PINRemoteImageResultTypeDownload(3), got %d", result.resultType);
+        XCTAssert(result.resultType == PINRemoteImageResultTypeDownload, @"Expected PINRemoteImageResultTypeDownload(3), got %lu", (unsigned long)result.resultType);
         dispatch_semaphore_signal(semaphore);
     }];
     XCTAssert(dispatch_semaphore_wait(semaphore, [self timeout]) == 0, @"Semaphore timed out.");
@@ -985,7 +1014,7 @@ static inline BOOL PINImageAlphaInfoIsOpaque(CGImageAlphaInfo info) {
     // nonTransparentWebPURL includes the header "expires: <about 1 yr from now>"
     // If that ever changes, this might start failing
     [self.imageManager downloadImageWithURL:[self nonTransparentWebPURL] completion:^(PINRemoteImageManagerResult *result) {
-        XCTAssert(result.resultType == PINRemoteImageResultTypeDownload, @"Expected PINRemoteImageResultTypeDownload(3), got %d", result.resultType);
+        XCTAssert(result.resultType == PINRemoteImageResultTypeDownload, @"Expected PINRemoteImageResultTypeDownload(3), got %lu", (unsigned long)result.resultType);
         dispatch_semaphore_signal(semaphore);
     }];
     XCTAssert(dispatch_semaphore_wait(semaphore, [self timeout]) == 0, @"Semaphore timed out.");
@@ -994,7 +1023,7 @@ static inline BOOL PINImageAlphaInfoIsOpaque(CGImageAlphaInfo info) {
     diskCachedObj = [cache objectFromDiskForKey:key];
     XCTAssert(diskCachedObj != nil, @"Image was not found in the disk cache");
     [self.imageManager downloadImageWithURL:[self nonTransparentWebPURL] completion:^(PINRemoteImageManagerResult *result) {
-        XCTAssert(result.resultType == PINRemoteImageResultTypeMemoryCache, @"Expected PINRemoteImageResultTypeCache(2), got %d", result.resultType);
+        XCTAssert(result.resultType == PINRemoteImageResultTypeMemoryCache, @"Expected PINRemoteImageResultTypeCache(2), got %lu", (unsigned long)result.resultType);
         dispatch_semaphore_signal(semaphore);
     }];
     XCTAssert(dispatch_semaphore_wait(semaphore, [self timeout]) == 0, @"Semaphore timed out.");
@@ -1003,7 +1032,7 @@ static inline BOOL PINImageAlphaInfoIsOpaque(CGImageAlphaInfo info) {
     diskCachedObj = [cache objectFromDiskForKey:key];
     XCTAssert(diskCachedObj == nil, @"Image was not discarded from the disk cache");
     [self.imageManager downloadImageWithURL:[self nonTransparentWebPURL] completion:^(PINRemoteImageManagerResult *result) {
-        XCTAssert(result.resultType == PINRemoteImageResultTypeDownload, @"Expected PINRemoteImageResultTypeDownload(3), got %d", result.resultType);
+        XCTAssert(result.resultType == PINRemoteImageResultTypeDownload, @"Expected PINRemoteImageResultTypeDownload(3), got %lu", (unsigned long)result.resultType);
         dispatch_semaphore_signal(semaphore);
     }];
     XCTAssert(dispatch_semaphore_wait(semaphore, [self timeout]) == 0, @"Semaphore timed out.");
@@ -1379,6 +1408,58 @@ static inline BOOL PINImageAlphaInfoIsOpaque(CGImageAlphaInfo info) {
   XCTAssert(requestRetried, @"Request should have been retried.");
   
   method_exchangeImplementations(originalMethod, swizzledMethod);
+}
+
+- (void)testCancelAllTasks
+{
+    XCTestExpectation *expectation = [self expectationWithDescription:@"Cancel all tasks"];
+    dispatch_group_t group = dispatch_group_create();
+    
+    dispatch_group_enter(group);
+    [self.imageManager downloadImageWithURL:[self progressiveURL2] options:0 progressDownload:^(int64_t completedBytes, int64_t totalBytes) {
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            dispatch_group_leave(group);
+        });
+    } completion:nil];
+    
+    dispatch_group_enter(group);
+    [self.imageManager downloadImageWithURL:[self progressiveURL] options:0 progressDownload:^(int64_t completedBytes, int64_t totalBytes) {
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            dispatch_group_leave(group);
+        });
+    } completion:nil];
+    
+    dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+        SEL originalSelector = @selector(cancelTaskWithUUID:storeResumeData:);
+        SEL swizzledSelector = @selector(swizzled_cancelTaskWithUUID:storeResumeData:);
+        
+        Method originalMethod = class_getInstanceMethod([PINRemoteImageManager class], originalSelector);
+        Method swizzledMethod = class_getInstanceMethod([PINRemoteImageManager class], swizzledSelector);
+        
+        method_exchangeImplementations(originalMethod, swizzledMethod);
+        
+        [self.imageManager cancelAllTasks];
+        
+        // Give manager 2 seconds to cancel all tasks
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            XCTAssert(canceledCount == 2);
+            [expectation fulfill];
+        });
+    });
+    dispatch_group_wait(group, [self timeout]);
+    [self waitForExpectationsWithTimeout:[self timeoutTimeInterval] handler:nil];
+}
+
+@end
+
+@implementation PINRemoteImageManager (Swizzled)
+
+- (void)swizzled_cancelTaskWithUUID:(nonnull NSUUID *)UUID storeResumeData:(BOOL)storeResumeData
+{
+    canceledCount++;
+    [self swizzled_cancelTaskWithUUID:UUID storeResumeData:storeResumeData];
 }
 
 @end
