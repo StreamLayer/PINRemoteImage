@@ -17,8 +17,8 @@ workflows:
             set -ex
             
             ### Cleanup, build, archive
-            rm -rf ./Carthage/ ./DerivedData
-            carthage build --no-skip-current
+            rm -rf ./Carthage/Build ./DerivedData
+            carthage build --no-use-binaries --no-skip-current
             zip -r $ARTIFACT ./Carthage/Build
 
             ### Generate release number
