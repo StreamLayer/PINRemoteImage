@@ -11,9 +11,6 @@ git clone -b v1.0.3 --single-branch https://chromium.googlesource.com/webm/libwe
 carthage build --no-skip-current
 zip -r $ARTIFACT ./Carthage/Build
 
-
-exit 0
-
 ### Generate release number
 # Release number consist of the latest release version of the upstream repo
 # suffixed with 'slr' suffix and amount of commits to be unique
