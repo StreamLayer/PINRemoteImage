@@ -5,7 +5,8 @@ UPSTREAM="git@github.com:pinterest/PINRemoteImage.git"
 
 ### Cleanup, build, archive
 rm -rf ./Carthage/ ./DerivedData
-carthage build --no-skip-current
+# carthage build --no-skip-current
+make all 
 zip -r $ARTIFACT ./Carthage/Build
 
 ### Generate release number
