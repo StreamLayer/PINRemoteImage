@@ -1,3 +1,2 @@
 github "StreamLayer/PINCache" "3.0.1-beta.8-slr.476"
 github "StreamLayer/PINOperation" "1.1.2-slr.40"
-git "https://chromium.googlesource.com/webm/libwebp" "v1.0.3"

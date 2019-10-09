@@ -5,9 +5,14 @@ UPSTREAM="git@github.com:pinterest/PINRemoteImage.git"
 
 ### Cleanup, build, archive
 rm -rf ./Carthage/ ./DerivedData
-# carthage build --no-skip-current
-make all 
+
+carthage bootstrap
+git clone -b v1.0.3 --single-branch https://chromium.googlesource.com/webm/libwebp ./Carthage/Checkouts/libwebp
+carthage build --no-skip-current
 zip -r $ARTIFACT ./Carthage/Build
+
+
+exit 0
 
 ### Generate release number
 # Release number consist of the latest release version of the upstream repo
