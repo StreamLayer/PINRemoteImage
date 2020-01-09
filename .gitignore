@@ -45,3 +45,6 @@ xcuserdata
 Pods/
 
 Carthage/Build
+node_modules/
+*.zip
+*.lock

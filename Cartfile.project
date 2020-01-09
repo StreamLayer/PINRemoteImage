@@ -1,0 +1,11 @@
+PINRemoteImage:
+  project: PINRemoteImage.xcodeproj
+  sdks:
+  - iphonesimulator
+  - iphoneos
+
+PINRemoteImage-tvOS:
+  project: PINRemoteImage.xcodeproj
+  sdks:
+  - appletvos
+  - appletvsimulator
